@@ -1,0 +1,126 @@
+//先にprocessingを立ち上げてから、ターミナルを起動
+//Julius（音声認識）からTwitterに投稿
+
+import twitter4j.*;
+import twitter4j.api.*;
+import twitter4j.conf.*;
+import twitter4j.http.*;
+import twitter4j.internal.async.*;
+import twitter4j.internal.http.*;
+import twitter4j.internal.logging.*;
+import twitter4j.internal.org.json.*;
+import twitter4j.internal.util.*;
+import twitter4j.util.*;
+
+import processing.net.*;
+ 
+ 
+ 
+Client myClient; //Juliusとの連携で必要
+float x;
+float y;
+String word = "";
+color col=color(0);
+
+
+String msg = "Automatically posted from Processing";
+ 
+String consumerKey = "iQ7ddYQGFpYV5OJkMs1n1p54U";
+String consumerSecret = "GNnoHnPy0FRHktsRC54P8vzskVGVq6KCSjLwjCgEoBDzpP2Mmd";
+String accessToken = "737616341759229952-saelU5b0QEMXiMHECrygHgistigRJ3x";
+String accessSecret = "GK08EESIG3tomuLjYY3Tzg3NmSzMmrfzjSHnSBOHKIIiO";
+Twitter myTwitter;
+ 
+ 
+int ms;
+color bg = color(0, 0, 0);
+
+
+void setup(){
+    size(500, 500);
+    myClient = new Client(this,"localhost",10500); //Juliusとの連携で必要
+ 
+    x = 500;
+    y = random(500);
+    
+    
+    ConfigurationBuilder cb = new ConfigurationBuilder();
+    cb.setOAuthConsumerKey(consumerKey);
+    cb.setOAuthConsumerSecret(consumerSecret);
+    cb.setOAuthAccessToken(accessToken);
+    cb.setOAuthAccessTokenSecret(accessSecret);
+    myTwitter = new TwitterFactory(cb.build()).getInstance();
+    
+}
+
+
+//これ以降がJuliusとの連携部分
+ 
+String getWord(){
+    String word = "";
+    if (myClient.available()>0){
+        String dataIn = myClient.readString();
+        String[] sList = split(dataIn, "WORD");
+        for(int i=1;i<sList.length;i++){
+            String tmp = sList[i];
+            String[] tList = split(tmp, '"');
+            word += tList[1];
+        }
+    }
+    if (word != ""){
+        println(word);
+        
+    try {
+    Status st = myTwitter.updateStatus(word);
+    println("Successfully updated the status to [" + st.getText() + "].");
+    ms = millis();
+    bg = color(0, 0, 255);
+
+  }
+    catch (TwitterException e) {
+    println(e.getStatusCode());
+    bg = color(255, 0, 0);
+  }
+
+    }
+    return word;
+}
+
+
+ 
+void draw(){
+  
+    
+    if (millis() - ms > 1000) {
+    bg = color(0, 0, 0);
+  }
+  
+    String tmpword = getWord(); //ここでJuliusで認識した音声を読み取る
+    
+ 
+    background(col);
+     x -= 1;
+    if ( x == -50) {
+        x = 550;
+        y = random(width - 50);
+    }
+
+        fill(255);
+        text(tmpword,100,100);
+        
+        delay(500);
+        
+        
+ /* try {
+    Status st = myTwitter.updateStatus(msg);
+    println("Successfully updated the status to [" + st.getText() + "].");
+    ms = millis();
+    bg = color(0, 0, 255);
+
+  }
+  catch (TwitterException e) {
+    println(e.getStatusCode());
+    bg = color(255, 0, 0);
+  }
+  */
+ }
